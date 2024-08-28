@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using NATS.Client.JetStream;
 using NATS.Client.JetStream.Models;
 using TGS.Core.Infrastructures.Nats.Interface;
@@ -13,7 +14,8 @@ namespace TGS.Core.Infrastructures.Nats.Worker;
 public class WorkQueueBackground<T>(
     INatsJSContext js,
     IWorkQueueHandler<T?> handler,
-    IEnumerable<IWorkQueue<T>> queues) : BackgroundService where T : class
+    IEnumerable<IWorkQueue<T>> queues,
+    ILogger<WorkQueueBackground<T>> logger) : BackgroundService where T : class
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -23,14 +25,14 @@ public class WorkQueueBackground<T>(
         {
             INatsJSStream stream;
 
-            var config = new StreamConfig(queue.StreamName, queue.Subjects.ToArray())
+            var config = new StreamConfig(queue.Stream, queue.Subjects.ToArray())
             {
                 Retention = StreamConfigRetention.Workqueue
             };
 
             try
             {
-                stream = await js.GetStreamAsync(queue.StreamName, cancellationToken: stoppingToken);
+                stream = await js.GetStreamAsync(queue.Stream, cancellationToken: stoppingToken);
             }
             catch
             {
@@ -48,13 +50,20 @@ public class WorkQueueBackground<T>(
         await foreach (var msg in consumer.ConsumeAsync<T>(cancellationToken: stoppingToken))
             try
             {
-                await handler.Handle(consumer.Info.Name, consumer.Info.Name, msg.Data, stoppingToken);
+                await handler.Handle(consumer.Info.Name, consumer.Info.Name, msg.Headers, msg.Data, stoppingToken);
                 await msg.AckAsync(new AckOpts { DoubleAck = true }, stoppingToken);
+                msg.EnsureSuccess();
             }
             catch (Exception e)
             {
-                await msg.NakAsync(new AckOpts { DoubleAck = true }, cancellationToken: stoppingToken);
-                Console.WriteLine(e);
+                logger.LogError("WorkQueue Error: {e}", e);
+
+                logger.LogError("WorkQueue Error Message: {msg}", msg.Data);
+
+                var nakDelayTime = queues.FirstOrDefault(x => x.Stream == consumer.Info.StreamName)?.NakDelayTime;
+
+                if (nakDelayTime is not null)
+                    await msg.NakAsync(delay: nakDelayTime.Value, cancellationToken: stoppingToken);
             }
     }
 }

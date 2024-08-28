@@ -87,12 +87,13 @@ public static class ServiceExtensions
     }
 
     public static IServiceCollection WorkQueueRegister<T>(this IServiceCollection services, Type messageHandler,
-        string streamName, IEnumerable<string> subjects) where T : class
+        string streamName, IEnumerable<string> subjects, TimeSpan? nakDelayTime = null) where T : class
     {
         var workQueue = new WorkQueue<T>
         {
-            StreamName = streamName,
-            Subjects = subjects
+            Stream = streamName,
+            Subjects = subjects,
+            NakDelayTime = nakDelayTime
         };
 
         if (services.FirstOrDefault(d => d.ServiceType == typeof(IEnumerable<IWorkQueue<T>>))
