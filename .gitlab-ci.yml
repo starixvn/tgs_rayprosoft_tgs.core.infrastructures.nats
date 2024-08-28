@@ -4,7 +4,7 @@ include:
     file: GitLab/Templates/gitlab-job-templates.yml
 
 variables:
-  BuildCacheKey: Tgs.MessageQueue.$CI_PIPELINE_IID
+  BuildCacheKey: Infrastructure.Nats.$CI_PIPELINE_IID
 
 stages:
   - build
