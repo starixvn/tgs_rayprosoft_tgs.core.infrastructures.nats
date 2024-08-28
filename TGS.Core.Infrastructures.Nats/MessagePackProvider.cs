@@ -1,49 +1,40 @@
 using System;
+using System.Buffers;
 using MessagePack;
+using MessagePack.Resolvers;
+using NATS.Client.Core;
 
-namespace TGS.Core.Infrastructures.Nats
+namespace TGS.Core.Infrastructures.Nats;
+
+public class MessagePackProvider<T>(MessagePackSerializerOptions opts) : INatsSerialize<T>, INatsDeserialize<T>
 {
-    public interface IMessagePackProvider
-    {
-        T Deserialize<T>(byte[] arrayToDeserialize);
+    public static MessagePackProvider<T> Default { get; } =
+        new(MessagePackSerializerOptions.Standard.WithCompression(MessagePackCompression.Lz4BlockArray)
+            .WithResolver(ContractlessStandardResolver.Instance));
 
-        byte[] Serialize<T>(T objectToSerialize);
+    public T Deserialize(in ReadOnlySequence<byte> buffer)
+    {
+        try
+        {
+            return MessagePackSerializer.Deserialize<T>(buffer, opts);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to deserialize. {ex}");
+            throw;
+        }
     }
 
-    public class MessagePackProvider : IMessagePackProvider
+    public void Serialize(IBufferWriter<byte> bufferWriter, T value)
     {
-        private readonly MessagePackSerializerOptions _messagePackSerializerOptions =
-            MessagePackSerializerOptions.Standard.WithCompression(MessagePackCompression.Lz4BlockArray);
-
-        public MessagePackProvider()
+        try
         {
-
+            MessagePackSerializer.Serialize(bufferWriter, value, opts);
         }
-
-        T IMessagePackProvider.Deserialize<T>(byte[] arrayToDeserialize)
+        catch (Exception ex)
         {
-            try
-            {
-                return MessagePackSerializer.Deserialize<T>(arrayToDeserialize, _messagePackSerializerOptions);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to deserialize. {ex}");
-                throw;
-            }
-        }
-
-        byte[] IMessagePackProvider.Serialize<T>(T objectToSerialize)
-        {
-            try
-            {
-                return MessagePackSerializer.Serialize(objectToSerialize, _messagePackSerializerOptions);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to serialize. {ex}");
-                throw;
-            }
+            Console.WriteLine($"Failed to serialize. {ex}");
+            throw;
         }
     }
 }
