@@ -21,7 +21,8 @@ public class SubscribeBackground<T>(
 
         foreach (var subjectObject in subjectObjects)
         {
-            var sub = await connection.SubscribeCoreAsync<T>(subjectObject.Subject, subjectObject.QueueGroup,
+            var sub = await connection.SubscribeCoreAsync(subjectObject.Subject, subjectObject.QueueGroup,
+                subjectObject.Serializer,
                 cancellationToken: stoppingToken);
 
             var task = Task.Run(async () =>

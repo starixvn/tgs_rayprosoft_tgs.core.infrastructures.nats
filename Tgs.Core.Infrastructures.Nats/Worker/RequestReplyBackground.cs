@@ -22,7 +22,8 @@ public class RequestReplyBackground<T, TResponse>(
 
         foreach (var subjectObject in subjectObjects)
         {
-            var sub = await connection.SubscribeCoreAsync<T>(subjectObject.Subject, subjectObject.QueueGroup,
+            var sub = await connection.SubscribeCoreAsync(subjectObject.Subject, subjectObject.QueueGroup,
+                subjectObject.Serializer,
                 cancellationToken: stoppingToken);
 
             var reader = sub.Msgs;
@@ -34,7 +35,7 @@ public class RequestReplyBackground<T, TResponse>(
                         var response = await handler.Handle(subjectObject.Subject, subjectObject.QueueGroup,
                             msg.Headers, msg.Data, stoppingToken);
 
-                        await msg.ReplyAsync(response, cancellationToken: stoppingToken);
+                        await msg.ReplyAsync(response, msg.Headers, cancellationToken: stoppingToken);
                     }
                     catch (Exception e)
                     {

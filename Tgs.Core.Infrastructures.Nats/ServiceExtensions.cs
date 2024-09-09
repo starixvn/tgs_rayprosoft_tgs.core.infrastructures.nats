@@ -29,12 +29,13 @@ public static class ServiceExtensions
     }
 
     public static IServiceCollection SubscribeRegister<T>(this IServiceCollection services, Type messageHandler,
-        string subject, string? queueGroup = null) where T : class
+        string subject, string? queueGroup = null, INatsDeserialize<T>? serializer = default) where T : class
     {
         var subjectObject = new SubjectObject<T>
         {
             Subject = subject,
-            QueueGroup = queueGroup
+            QueueGroup = queueGroup,
+            Serializer = serializer
         };
 
         if (services.FirstOrDefault(d => d.ServiceType == typeof(IEnumerable<ISubjectObject<T>>))
@@ -58,13 +59,15 @@ public static class ServiceExtensions
 
     public static IServiceCollection RequestReplyRegister<T, TResponse>(this IServiceCollection services,
         Type messageHandler,
-        string subject, string? queueGroup) where T : class
+        string subject, string? queueGroup,
+        INatsDeserialize<T>? serializer = default) where T : class
         where TResponse : class
     {
         var subjectObject = new SubjectObject<T, TResponse>
         {
             Subject = subject,
-            QueueGroup = queueGroup
+            QueueGroup = queueGroup,
+            Serializer = serializer
         };
 
         if (services.FirstOrDefault(d => d.ServiceType == typeof(IEnumerable<ISubjectObject<T, TResponse>>))
@@ -87,13 +90,15 @@ public static class ServiceExtensions
     }
 
     public static IServiceCollection WorkQueueRegister<T>(this IServiceCollection services, Type messageHandler,
-        string streamName, IEnumerable<string> subjects, TimeSpan? nakDelayTime = null) where T : class
+        string streamName, IEnumerable<string> subjects, TimeSpan? nakDelayTime = null,
+        INatsDeserialize<T>? serializer = default) where T : class
     {
         var workQueue = new WorkQueue<T>
         {
             Stream = streamName,
             Subjects = subjects,
-            NakDelayTime = nakDelayTime
+            NakDelayTime = nakDelayTime,
+            Serializer = serializer
         };
 
         if (services.FirstOrDefault(d => d.ServiceType == typeof(IEnumerable<IWorkQueue<T>>))

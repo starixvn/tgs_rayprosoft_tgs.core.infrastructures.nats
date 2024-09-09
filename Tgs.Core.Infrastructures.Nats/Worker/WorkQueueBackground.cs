@@ -19,7 +19,7 @@ public class WorkQueueBackground<T>(
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        var consumers = new List<INatsJSConsumer>();
+        var works = new List<(INatsJSConsumer consumer, IWorkQueue<T> workQueue)>();
 
         foreach (var queue in queues)
         {
@@ -43,11 +43,11 @@ public class WorkQueueBackground<T>(
                 await stream.CreateOrUpdateConsumerAsync(new ConsumerConfig("processor"),
                     stoppingToken);
 
-            consumers.Add(durable);
+            works.Add((durable, queue));
         }
 
-        foreach (var consumer in consumers)
-        await foreach (var msg in consumer.ConsumeAsync<T>(cancellationToken: stoppingToken))
+        foreach (var (consumer, workQueue) in works)
+        await foreach (var msg in consumer.ConsumeAsync(workQueue.Serializer, cancellationToken: stoppingToken))
             try
             {
                 await handler.Handle(consumer.Info.Name, consumer.Info.Name, msg.Headers, msg.Data, stoppingToken);
@@ -60,7 +60,7 @@ public class WorkQueueBackground<T>(
 
                 logger.LogError("WorkQueue Error Message: {msg}", msg.Data);
 
-                var nakDelayTime = queues.FirstOrDefault(x => x.Stream == consumer.Info.StreamName)?.NakDelayTime;
+                var nakDelayTime = workQueue.NakDelayTime;
 
                 if (nakDelayTime is not null)
                     await msg.NakAsync(delay: nakDelayTime.Value, cancellationToken: stoppingToken);
