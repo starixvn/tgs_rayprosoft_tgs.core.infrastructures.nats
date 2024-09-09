@@ -22,8 +22,8 @@ public class MessageManager(INatsConnection connection, INatsJSContext natsJsCon
         INatsSerialize<TData>? requestSerializer = null, INatsDeserialize<TResponse>? replySerializer = null,
         NatsSubOpts? replyOpts = null, CancellationToken cancellationToken = default)
     {
-        return connection.RequestAsync(subject, message, natsHeaders, requestSerializer: requestSerializer,
-            replySerializer: replySerializer, replyOpts: replyOpts, cancellationToken: cancellationToken);
+        return connection.RequestAsync(subject, message, natsHeaders, requestSerializer,
+            replySerializer, replyOpts: replyOpts, cancellationToken: cancellationToken);
     }
 
     public ValueTask<PubAckResponse> JsPublishAsync<TData>(string subject, TData message, NatsJSPubOpts? opts = null,
