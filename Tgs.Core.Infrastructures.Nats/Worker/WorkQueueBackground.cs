@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using NATS.Client.JetStream;
@@ -13,7 +14,7 @@ namespace TGS.Core.Infrastructures.Nats.Worker;
 
 public class WorkQueueBackground<T>(
     INatsJSContext js,
-    IWorkQueueHandler<T?> handler,
+    IServiceProvider serviceProvider,
     IEnumerable<IWorkQueue<T>> queues,
     ILogger<WorkQueueBackground<T>> logger) : BackgroundService where T : class
 {
@@ -50,8 +51,16 @@ public class WorkQueueBackground<T>(
         await foreach (var msg in consumer.ConsumeAsync(workQueue.Serializer, cancellationToken: stoppingToken))
             try
             {
-                await handler.Handle(consumer.Info.Name, consumer.Info.Name, msg.Headers, msg.Data, stoppingToken);
+                using var scope = serviceProvider.CreateScope();
+
+                var messageHandler =
+                    (IWorkQueueHandler<T>)scope.ServiceProvider.GetRequiredService(typeof(IWorkQueueHandler<T>));
+
+                await messageHandler.Handle(consumer.Info.Name, consumer.Info.Name, msg.Headers, msg.Data,
+                    stoppingToken);
+
                 await msg.AckAsync(new AckOpts { DoubleAck = true }, stoppingToken);
+
                 msg.EnsureSuccess();
             }
             catch (Exception e)
