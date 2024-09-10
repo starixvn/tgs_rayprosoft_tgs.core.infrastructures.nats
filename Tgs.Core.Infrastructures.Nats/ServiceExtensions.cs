@@ -25,7 +25,8 @@ public static class ServiceExtensions
             {
                 var connection = provider.GetRequiredService<NatsConnection>();
                 return new NatsJSContext(connection);
-            });
+            })
+            .AddTransient<IMessageManager, MessageManager>();
     }
 
     public static IServiceCollection SubscribeRegister<T>(this IServiceCollection services, Type messageHandler,
