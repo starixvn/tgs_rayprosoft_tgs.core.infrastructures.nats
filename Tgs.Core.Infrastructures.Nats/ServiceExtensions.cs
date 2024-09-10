@@ -49,8 +49,7 @@ public static class ServiceExtensions
             existingList.Add(subjectObject);
         }
 
-        if (services.All(d => d.ServiceType != typeof(IMessageHandler<T>)))
-            services.AddTransient(typeof(IMessageHandler<T>), messageHandler);
+        services.AddTransient(typeof(IMessageHandler<T>), messageHandler);
 
         services.AddHostedService<SubscribeBackground<T>>();
 
@@ -81,8 +80,7 @@ public static class ServiceExtensions
             existingList.Add(subjectObject);
         }
 
-        if (services.All(d => d.ServiceType != typeof(IMessageReplyHandler<T, TResponse>)))
-            services.AddTransient(typeof(IMessageReplyHandler<T, TResponse>), messageHandler);
+        services.AddTransient(typeof(IMessageReplyHandler<T, TResponse>), messageHandler);
 
 
         services.AddHostedService<RequestReplyBackground<T, TResponse>>();
@@ -112,8 +110,7 @@ public static class ServiceExtensions
             existingList.Add(workQueue);
         }
 
-        if (services.All(d => d.ServiceType != typeof(IWorkQueueHandler<T>)))
-            services.AddTransient(typeof(IWorkQueueHandler<T>), messageHandler);
+        services.AddTransient(typeof(IWorkQueueHandler<T>), messageHandler);
 
         services.AddHostedService<WorkQueueBackground<T>>();
 

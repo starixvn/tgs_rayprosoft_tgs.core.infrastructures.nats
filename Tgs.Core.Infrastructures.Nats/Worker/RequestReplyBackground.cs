@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using NATS.Client.Core;
@@ -11,7 +12,7 @@ namespace TGS.Core.Infrastructures.Nats.Worker;
 
 public class RequestReplyBackground<T, TResponse>(
     INatsConnection connection,
-    IMessageReplyHandler<T?, TResponse> handler,
+    IServiceProvider serviceProvider,
     IEnumerable<ISubjectObject<T, TResponse>> subjectObjects,
     ILogger<RequestReplyBackground<T, TResponse>> logger)
     : BackgroundService where T : class where TResponse : class
@@ -32,7 +33,13 @@ public class RequestReplyBackground<T, TResponse>(
                 await foreach (var msg in reader.ReadAllAsync(stoppingToken))
                     try
                     {
-                        var response = await handler.Handle(subjectObject.Subject, subjectObject.QueueGroup,
+                        using var scope = serviceProvider.CreateScope();
+
+                        var messageHandler =
+                            (IMessageReplyHandler<T, TResponse>)scope.ServiceProvider.GetRequiredService(
+                                typeof(IMessageReplyHandler<T, TResponse>));
+
+                        var response = await messageHandler.Handle(subjectObject.Subject, subjectObject.QueueGroup,
                             msg.Headers, msg.Data, stoppingToken);
 
                         await msg.ReplyAsync(response, msg.Headers, cancellationToken: stoppingToken);
