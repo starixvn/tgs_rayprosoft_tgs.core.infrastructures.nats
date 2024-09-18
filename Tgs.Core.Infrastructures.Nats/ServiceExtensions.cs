@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using NATS.Client.Core;
 using NATS.Client.Hosting;
 using NATS.Client.JetStream;
@@ -27,6 +28,20 @@ public static class ServiceExtensions
                 return new NatsJSContext(connection);
             })
             .AddTransient<IMessageManager, MessageManager>();
+    }
+
+    public static IServiceCollection AddFakeNatsMessage(this IServiceCollection services)
+    {
+        foreach (var desc in services.Where(
+                     desc => desc.ServiceType == typeof(IHostedService)
+                             && (desc.ImplementationType?.Name == typeof(WorkQueueBackground<>).Name ||
+                                 desc.ImplementationType?.Name == typeof(SubscribeBackground<>).Name ||
+                                 desc.ImplementationType?.Name == typeof(RequestReplyBackground<,>).Name)).ToArray())
+        {
+            _ = services.Remove(desc);
+        }
+
+        return services.AddTransient<IMessageManager, FakeMessageManager>();
     }
 
     public static IServiceCollection SubscribeRegister<T>(this IServiceCollection services, Type messageHandler,
