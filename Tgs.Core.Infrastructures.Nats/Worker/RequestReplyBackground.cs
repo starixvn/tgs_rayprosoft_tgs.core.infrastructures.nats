@@ -15,7 +15,7 @@ public class RequestReplyBackground<T, TResponse>(
     IServiceProvider serviceProvider,
     IEnumerable<ISubjectObject<T, TResponse>> subjectObjects,
     ILogger<RequestReplyBackground<T, TResponse>> logger)
-    : BackgroundService where T : class where TResponse : class
+    : BackgroundService where T : class
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
