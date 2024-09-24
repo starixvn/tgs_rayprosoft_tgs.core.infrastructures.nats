@@ -76,7 +76,6 @@ public static class ServiceExtensions
         Type messageHandler,
         string subject, string? queueGroup,
         INatsDeserialize<T>? serializer = default) where T : class
-        where TResponse : class
     {
         var subjectObject = new SubjectObject<T, TResponse>
         {
