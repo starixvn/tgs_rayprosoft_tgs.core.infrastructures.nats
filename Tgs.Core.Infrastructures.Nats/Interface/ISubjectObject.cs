@@ -6,12 +6,13 @@ public interface ISubjectObject<T>
 {
     string Subject { get; set; }
     string? QueueGroup { get; set; }
-    INatsDeserialize<T>? Serializer { get; set; }
+    INatsDeserialize<T>? RequestSerializer { get; set; }
 }
 
 public interface ISubjectObject<T, TResponse>
 {
     string Subject { get; set; }
     string? QueueGroup { get; set; }
-    INatsDeserialize<T>? Serializer { get; set; }
+    INatsSerialize<TResponse>? ReplySerializer { get; set; }
+    INatsDeserialize<T>? RequestSerializer { get; set; }
 }

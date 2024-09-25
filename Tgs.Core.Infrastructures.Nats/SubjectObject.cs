@@ -7,12 +7,13 @@ public class SubjectObject<T> : ISubjectObject<T> where T : class
 {
     public required string Subject { get; set; }
     public string? QueueGroup { get; set; }
-    public INatsDeserialize<T>? Serializer { get; set; } = default;
+    public INatsDeserialize<T>? RequestSerializer { get; set; } = default;
 }
 
 public class SubjectObject<T, TResponse> : ISubjectObject<T, TResponse> where T : class
 {
     public required string Subject { get; set; }
     public string? QueueGroup { get; set; }
-    public INatsDeserialize<T>? Serializer { get; set; } = default;
+    public INatsSerialize<TResponse>? ReplySerializer { get; set; }
+    public INatsDeserialize<T>? RequestSerializer { get; set; }
 }
