@@ -2,7 +2,7 @@
 
 	<PropertyGroup>
 		<TargetFramework>net8.0</TargetFramework>
-		<Version>0.0.6</Version>
+		<Version>0.0.7</Version>
 		<Nullable>enable</Nullable>
 		<PackageProjectUrl>https://gitlab.com/rayprosoft/tgs.core.infrastructures.nats</PackageProjectUrl>
 		<RepositoryType>git</RepositoryType>

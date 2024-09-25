@@ -45,13 +45,13 @@ public static class ServiceExtensions
     }
 
     public static IServiceCollection SubscribeRegister<T>(this IServiceCollection services, Type messageHandler,
-        string subject, string? queueGroup = null, INatsDeserialize<T>? serializer = default) where T : class
+        string subject, string? queueGroup = null, INatsDeserialize<T>? deserialize = default) where T : class
     {
         var subjectObject = new SubjectObject<T>
         {
             Subject = subject,
             QueueGroup = queueGroup,
-            Serializer = serializer
+            Deserialize = deserialize
         };
 
         if (services.FirstOrDefault(d => d.ServiceType == typeof(IEnumerable<ISubjectObject<T>>))
@@ -75,13 +75,15 @@ public static class ServiceExtensions
     public static IServiceCollection RequestReplyRegister<T, TResponse>(this IServiceCollection services,
         Type messageHandler,
         string subject, string? queueGroup,
-        INatsDeserialize<T>? serializer = default) where T : class
+        INatsSerialize<TResponse>? serializer = default,
+        INatsDeserialize<T>? deserialize = default) where T : class
     {
         var subjectObject = new SubjectObject<T, TResponse>
         {
             Subject = subject,
             QueueGroup = queueGroup,
-            Serializer = serializer
+            Serializer = serializer,
+            Deserialize = deserialize
         };
 
         if (services.FirstOrDefault(d => d.ServiceType == typeof(IEnumerable<ISubjectObject<T, TResponse>>))
